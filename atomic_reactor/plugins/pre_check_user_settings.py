@@ -30,8 +30,24 @@ class CheckUserSettingsPlugin(PreBuildPlugin):
     key = PLUGIN_CHECK_USER_SETTINGS
     is_allowed_to_fail = False
 
+    def __init__(self, tasker, workflow, flatpak=False):
+        """
+        :param tasker: ContainerTasker instance
+        :param workflow: DockerBuildWorkflow instance
+        :param flatpak: bool, if build is for flatpak
+        """
+        super(CheckUserSettingsPlugin, self).__init__(tasker, workflow)
+
+        self.flatpak = flatpak
+
     def dockerfile_checks(self):
         """Checks for Dockerfile"""
+        if self.flatpak:
+            self.log.info(
+                "Skipping Dockerfile checks because this is flatpak build "
+                "without user Dockerfile")
+            return
+
         self.appregistry_bundle_label_mutually_exclusive()
 
     def appregistry_bundle_label_mutually_exclusive(self):
@@ -40,7 +56,7 @@ class CheckUserSettingsPlugin(PreBuildPlugin):
         are mutually exclusive. Fail when both are specified.
         """
         msg = (
-            "only one of labels com.redhat.com.delivery.appregistry"
+            "only one of labels com.redhat.com.delivery.appregistry "
             "and com.redhat.delivery.operator.bundle is allowed"
         )
         self.log.debug("Running check: %s", msg)
